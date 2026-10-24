@@ -1,0 +1,99 @@
+{
+  "name": "@trappbuild/react",
+  "version": "0.2.2",
+  "description": "Trapp.build SDK for React and the browser: error tracking, availability (Warning / Lockdown), Metrika, click recordings and a cookie consent banner",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trappbuild/react.git"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./browser": {
+      "import": {
+        "types": "./dist/types/browser.d.ts",
+        "default": "./dist/browser.js"
+      },
+      "require": {
+        "types": "./dist/types/browser.d.cts",
+        "default": "./dist/browser.cjs"
+      }
+    },
+    "./server": {
+      "import": {
+        "types": "./dist/types/server.d.ts",
+        "default": "./dist/server.js"
+      },
+      "require": {
+        "types": "./dist/types/server.d.cts",
+        "default": "./dist/server.cjs"
+      }
+    },
+    "./guard.min.js": "./dist/guard.min.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "dev": "vite --config vite.playground.config.ts",
+    "build": "vite build && vite build --mode server && vite build --mode browser && vite build --mode guard && tsc -p tsconfig.build.json && node scripts/cjs-types.mjs && node scripts/check-package.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "size": "node scripts/size.mjs",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build && npm run size"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "rrweb": ">=2"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "rrweb": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^29.1.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "rrweb": "^2.1.7",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  },
+  "homepage": "https://github.com/trappbuild/react#readme",
+  "bugs": {
+    "url": "https://github.com/trappbuild/react/issues"
+  }
+}

@@ -1,0 +1,67 @@
+# Publishes @trappbuild/react to GitHub Packages.
+# Release:  npm run release -- patch   (bumps package.json + src/core/version.ts, commits, tags vX.Y.Z)
+#           git push --follow-tags
+#
+# Every quality gate is an explicit step here (not hidden in prepublishOnly, which `--ignore-scripts`
+# skips on purpose so a compromised dependency's lifecycle scripts cannot run with the publish token).
+name: Publish @trappbuild/react
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: "@trappbuild"
+
+      - name: Check tag matches package.json version
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "v$PKG_VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Install (lockfile, no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle size budget
+        run: npm run size
+
+      - name: Verify package contents
+        run: |
+          npm pack --dry-run --json --ignore-scripts > pack.json
+          for f in dist/index.js dist/browser.js dist/server.js dist/guard.min.js; do
+            node -e "const p=require('./pack.json')[0].files.map(f=>f.path); process.exit(p.includes('$f') ? 0 : 1)" \
+              || { echo "missing $f in package"; exit 1; }
+          done
+          node scripts/check-package.mjs
+
+      - name: Publish
+        run: npm publish --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

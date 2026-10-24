@@ -1,0 +1,433 @@
+/* All selectors are prefixed with .trapp-cc so nothing leaks into the host app.
+   Customise via CSS variables, e.g.  .trapp-cc { --trapp-cc-accent: #7c3aed; } */
+
+.trapp-cc {
+  --trapp-cc-bg: #101010;
+  --trapp-cc-surface: #000000;
+  --trapp-cc-border: #232323;
+  --trapp-cc-text: #e5e7eb;
+  --trapp-cc-text-dim: #9aa0a6;
+  --trapp-cc-accent: #00ff99;
+  --trapp-cc-accent-text: #04120b;
+  --trapp-cc-secondary-bg: #26272c;
+  --trapp-cc-secondary-text: #ffffff;
+  --trapp-cc-radius: 12px;
+  --trapp-cc-font: inherit;
+  --trapp-cc-z: 2147483000;
+
+  box-sizing: border-box;
+  font-family: var(--trapp-cc-font);
+  color: var(--trapp-cc-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.trapp-cc--light {
+  --trapp-cc-bg: #ffffff;
+  --trapp-cc-surface: #f5f6f7;
+  --trapp-cc-border: #e3e5e8;
+  --trapp-cc-text: #15171a;
+  --trapp-cc-text-dim: #5d636b;
+  --trapp-cc-accent: #00c777;
+  --trapp-cc-accent-text: #ffffff;
+  --trapp-cc-secondary-bg: #eceef1;
+  --trapp-cc-secondary-text: #15171a;
+}
+
+.trapp-cc *,
+.trapp-cc *::before,
+.trapp-cc *::after {
+  box-sizing: border-box;
+}
+
+.trapp-cc p {
+  margin: 0;
+}
+
+.trapp-cc a {
+  color: var(--trapp-cc-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- banner ---- */
+.trapp-cc-banner {
+  position: fixed;
+  z-index: var(--trapp-cc-z);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 22px;
+  background: var(--trapp-cc-bg);
+  border: 1px solid var(--trapp-cc-border);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  animation: trapp-cc-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trapp-cc-banner--bottom {
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  border-radius: var(--trapp-cc-radius);
+}
+
+.trapp-cc-banner--bottom-left,
+.trapp-cc-banner--bottom-right {
+  bottom: 16px;
+  width: min(420px, calc(100vw - 32px));
+  flex-direction: column;
+  align-items: stretch;
+  border-radius: var(--trapp-cc-radius);
+}
+
+.trapp-cc-banner--bottom-left {
+  left: 16px;
+}
+
+.trapp-cc-banner--bottom-right {
+  right: 16px;
+}
+
+.trapp-cc-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.trapp-cc-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--trapp-cc-text);
+  margin-bottom: 4px !important;
+}
+
+.trapp-cc-desc {
+  font-size: 13px;
+  color: var(--trapp-cc-text-dim);
+}
+
+/* ---- branding ---- */
+.trapp-cc-branding {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--trapp-cc-text-dim);
+}
+
+.trapp-cc-branding-logo {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  display: block;
+}
+
+.trapp-cc--light .trapp-cc-branding-logo {
+  border-color: transparent;
+}
+
+.trapp-cc-branding-name {
+  font-weight: 700;
+  color: var(--trapp-cc-text);
+}
+
+.trapp-cc-modal-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--trapp-cc-border);
+}
+
+.trapp-cc-modal-footer .trapp-cc-branding {
+  margin-top: 0;
+}
+
+/* ---- buttons ---- */
+.trapp-cc-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.trapp-cc-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 140ms ease, border-color 140ms ease, background 140ms ease,
+    transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trapp-cc-btn:active {
+  transform: scale(0.96);
+}
+
+.trapp-cc-btn:focus-visible,
+.trapp-cc-switch:focus-visible,
+.trapp-cc-close:focus-visible {
+  outline: 2px solid var(--trapp-cc-accent);
+  outline-offset: 2px;
+}
+
+.trapp-cc-btn--primary {
+  background: var(--trapp-cc-accent);
+  color: var(--trapp-cc-accent-text);
+}
+
+/* "Reject" gets the same weight as "Accept" — regulators (GDPR/CNIL) require it. */
+.trapp-cc-btn--secondary {
+  background: var(--trapp-cc-secondary-bg);
+  color: var(--trapp-cc-secondary-text);
+}
+
+.trapp-cc-btn--ghost {
+  background: transparent;
+  border-color: var(--trapp-cc-border);
+  color: var(--trapp-cc-text);
+}
+
+.trapp-cc-btn--primary:hover,
+.trapp-cc-btn--secondary:hover {
+  opacity: 0.85;
+}
+
+.trapp-cc-btn--ghost:hover {
+  border-color: var(--trapp-cc-text-dim);
+}
+
+/* ---- preferences modal ---- */
+.trapp-cc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--trapp-cc-z);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  animation: trapp-cc-fade 160ms ease;
+}
+
+.trapp-cc-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 22px;
+  background: var(--trapp-cc-bg);
+  border: 1px solid var(--trapp-cc-border);
+  border-radius: var(--trapp-cc-radius);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  animation: trapp-cc-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trapp-cc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trapp-cc-modal-header .trapp-cc-title {
+  font-size: 17px;
+  margin-bottom: 0 !important;
+}
+
+.trapp-cc-close {
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--trapp-cc-text-dim);
+  cursor: pointer;
+}
+
+.trapp-cc-close:hover {
+  color: var(--trapp-cc-text);
+}
+
+.trapp-cc-modal > .trapp-cc-desc {
+  margin: 6px 0 16px !important;
+}
+
+.trapp-cc-categories {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trapp-cc-category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  background: var(--trapp-cc-surface);
+  border: 1px solid var(--trapp-cc-border);
+  border-radius: 10px;
+}
+
+.trapp-cc-category-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trapp-cc-category-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.trapp-cc-category-desc {
+  font-size: 12px;
+  color: var(--trapp-cc-text-dim);
+}
+
+.trapp-cc-always-on {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--trapp-cc-accent);
+}
+
+/* ---- switch ---- */
+.trapp-cc-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--trapp-cc-border);
+  background: var(--trapp-cc-secondary-bg);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.trapp-cc-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--trapp-cc-text-dim);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease;
+}
+
+.trapp-cc-switch.is-on {
+  background: var(--trapp-cc-accent);
+  border-color: var(--trapp-cc-accent);
+}
+
+.trapp-cc-switch.is-on .trapp-cc-switch-thumb {
+  transform: translateX(18px);
+  background: var(--trapp-cc-accent-text);
+}
+
+.trapp-cc-actions--modal {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* ---- responsive ---- */
+@media (max-width: 720px) {
+  .trapp-cc-banner--bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .trapp-cc-actions {
+    flex-direction: column-reverse;
+  }
+
+  .trapp-cc-btn {
+    width: 100%;
+  }
+}
+
+/* ---- exit animations (the element unmounts on animationend) ---- */
+.trapp-cc-banner.is-exiting {
+  animation: trapp-cc-out 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+.trapp-cc-overlay.is-exiting {
+  animation: trapp-cc-fade-out 240ms ease forwards;
+  pointer-events: none;
+}
+
+.trapp-cc-overlay.is-exiting .trapp-cc-modal {
+  animation: trapp-cc-modal-out 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes trapp-cc-out {
+  to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+}
+
+@keyframes trapp-cc-modal-out {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+}
+
+@keyframes trapp-cc-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes trapp-cc-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes trapp-cc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trapp-cc-banner,
+  .trapp-cc-modal,
+  .trapp-cc-overlay,
+  .trapp-cc-banner.is-exiting,
+  .trapp-cc-overlay.is-exiting,
+  .trapp-cc-overlay.is-exiting .trapp-cc-modal {
+    animation: none;
+  }
+
+  .trapp-cc-btn:active {
+    transform: none;
+  }
+}

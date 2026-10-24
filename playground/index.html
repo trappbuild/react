@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <title>Trapp.build SDK — playground</title>
+    <!-- The guard snippet, exactly as a site would inline it (served from src during development). -->
+    <script data-trapp-guard data-url="https://maintenance.trapp.build/playground/web" data-timeout="15000" src="../src/guard/guard.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #181818;
+        color: #e5e7eb;
+      }
+      button {
+        padding: 6px 12px;
+      }
+    </style>
+
+    <!-- Blocked until "statistics" is granted (Cookiebot-style) -->
+    <script type="text/plain" data-trapp-consent="statistics">
+      window.__statsLoaded = true;
+      document.dispatchEvent(new Event("demo:stats-loaded"));
+      console.log("[demo] statistics script executed");
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>
