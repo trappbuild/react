@@ -6,7 +6,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/trappbuild/react.git"
+    "url": "git+https://github.com/trappbuild/react.git"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
