@@ -1,4 +1,6 @@
-# Publishes @trappbuild/react to GitHub Packages.
+# Publishes @trappbuild/react to npmjs.com with trusted publishing (OIDC): no token in the repository secrets,
+# and npm shows provenance — which commit and workflow built the release. The trusted publisher is set on
+# npmjs.com: package Settings → Trusted publishing → GitHub Actions, trappbuild/react, publish.yml.
 # Release:  npm run release -- patch   (bumps package.json + src/core/version.ts, commits, tags vX.Y.Z)
 #           git push --follow-tags
 #
@@ -13,7 +15,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write # OIDC for npm trusted publishing and provenance
 
 jobs:
   publish:
@@ -25,9 +27,9 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
-          registry-url: https://npm.pkg.github.com
-          scope: "@trappbuild"
+          # trusted publishing needs npm 11.5+, which comes with Node 24
+          node-version: 24
+          registry-url: https://registry.npmjs.org
 
       - name: Check tag matches package.json version
         run: |
@@ -62,6 +64,4 @@ jobs:
           node scripts/check-package.mjs
 
       - name: Publish
-        run: npm publish --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --ignore-scripts --provenance --access public

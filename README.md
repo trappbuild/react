@@ -4,6 +4,10 @@ Trapp.build SDK for React and the browser: **error tracking**, **availability** 
 Lockdown redirect), **Metrika** (visits), **click recordings** (heatmaps, session replay) and a
 **cookie consent banner**. One package; each module is a function, so what you don't use is not bundled.
 
+```bash
+npm install @trappbuild/react
+```
+
 ```tsx
 import { TrappProvider, TrappErrorBoundary, ConsentProvider, errors, maintenance, metrika, recordings } from "@trappbuild/react";
 

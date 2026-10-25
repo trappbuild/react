@@ -51,7 +51,8 @@
   ],
   "sideEffects": false,
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "scripts": {
     "dev": "vite --config vite.playground.config.ts",
