@@ -1,6 +1,6 @@
 {
   "name": "@trappbuild/react",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Trapp.build SDK for React and the browser: error tracking, availability (Warning / Lockdown), Metrika, click recordings and a cookie consent banner",
   "license": "MIT",
   "type": "module",
