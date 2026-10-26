@@ -42,6 +42,28 @@ export const BLOCK_SELECTOR = '[data-trapp-block],input[type="password"],input[a
 /** With `blockImages`: images too, except those marked `data-trapp-keep`. */
 export const BLOCK_IMAGES_SELECTOR = `${BLOCK_SELECTOR},img:not([data-trapp-keep])`;
 
+/**
+ * This tab's recording in `sessionStorage`: the next chunk's `seq` and whether it was a sampled visit.
+ * A reload or a page of a multi-page site keeps the same session id, and the server already has a
+ * recording for it — starting again from `seq` 0 would get a 409. So the new page continues the
+ * recording from a fresh full snapshot; `done` means the server ended it (limits, refusal).
+ */
+const STATE_KEY = "trapp_replay";
+
+interface SavedReplay {
+  session: string;
+  seq: number;
+  sampled: boolean;
+  done?: boolean;
+}
+
+function loadReplay(session: string): SavedReplay | null {
+  const saved = safe(() => JSON.parse(sessionStorage.getItem(STATE_KEY) ?? "null") as SavedReplay | null);
+  return saved && saved.session === session && Number.isInteger(saved.seq) && saved.seq > 0 ? saved : null;
+}
+
+const saveReplay = (state: SavedReplay) => safe(() => sessionStorage.setItem(STATE_KEY, JSON.stringify(state)));
+
 /** Rough size of an rrweb event: only mutations and unknown shapes are serialized to measure them. */
 const sizeOf = (event: RrwebEvent) => {
   const data = event.data as { source?: number } | null;
@@ -51,7 +73,8 @@ const sizeOf = (event: RrwebEvent) => {
 
 /**
  * Devices where rrweb's DOM serialization costs visible jank or battery: ≤ 2 GB of memory, ≤ 2 cores,
- * the user's data saver, or a 2G/3G connection. Unknown values (Safari, Firefox) count as capable.
+ * the user's data saver, or a 2G connection. Not 3G: mobile Chrome reports it for ordinary mobile data,
+ * and that would skip most phone visitors. Unknown values (Safari, Firefox) count as capable.
  */
 export function weakDevice(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -59,7 +82,7 @@ export function weakDevice(): boolean {
   if (typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2) return true;
   if (typeof nav.hardwareConcurrency === "number" && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 2) return true;
   const connection = nav.connection;
-  return !!connection && (connection.saveData === true || /^(slow-2g|2g|3g)$/.test(connection.effectiveType ?? ""));
+  return !!connection && (connection.saveData === true || /^(slow-2g|2g)$/.test(connection.effectiveType ?? ""));
 }
 
 /** rrweb IncrementalSnapshot → MouseInteraction → Click. */
@@ -76,15 +99,16 @@ const star = (text: string) => text.replace(/\S/g, "*");
  * that never gets there is never sent. `onError`: keeps the last 60–120 s in memory (two checkout
  * buffers) and streams them, plus 30 s more, when an error or rage click happens. Chunks every 5 s
  * or 64 KB → `POST replay?session&seq[&trigger&path]`. Stops on 429 (and any other refusal), after
- * 30 min, or after 10 MB.
+ * 30 min, or after 10 MB. After a reload the recording of this tab goes on (see `STATE_KEY`).
  */
 export function createReplay(client: Client, settings: ReplaySettings) {
   const transport = client.transport!;
+  const resumed = loadReplay(client.sessionId);
   let stopRecord: (() => void) | undefined;
   let rrweb: RrwebModule | null = null;
   let streaming = false;
   let ended = false;
-  let seq = 0;
+  let seq = resumed?.seq ?? 0;
   let bytes = 0;
   let startedAt = 0;
   let trigger: ReplayTrigger | null = null;
@@ -103,10 +127,12 @@ export function createReplay(client: Client, settings: ReplaySettings) {
   let afterTimer: ReturnType<typeof setTimeout> | undefined;
   let sending = Promise.resolve();
 
-  const end = (reason: string) => {
+  const end = (reason: string, final = true) => {
     if (ended) return;
     ended = true;
     devWarn(`replay stopped: ${reason}`);
+    // the server has this recording and won't take it from seq 0 again — the next pages don't try
+    if (final && seq > 0) saveReplay({ session: client.sessionId, seq, sampled: sampledSession, done: true });
     clearTimeout(chunkTimer);
     clearTimeout(afterTimer);
     safe(() => stopRecord?.());
@@ -131,6 +157,7 @@ export function createReplay(client: Client, settings: ReplaySettings) {
       query.path = location.pathname.slice(0, 300);
     }
     seq++;
+    saveReplay({ session: client.sessionId, seq, sampled: sampledSession });
     sending = sending.then(async () => {
       if (ended) return;
       const status = await transport.send("replay", beacon ? body : await compress(body), { query, beacon });
@@ -139,6 +166,8 @@ export function createReplay(client: Client, settings: ReplaySettings) {
       // 429 without Retry-After (10 MB / 30 min per session): this session is over.
       // 429 with Retry-After: the monthly quota — stop until status says recordings are on again.
       if (status >= 200 && status < 300 && status !== 204) return;
+      // the beacon on pagehide: the page is leaving, and the next one continues the recording from seq + 1
+      if (beacon && status === 0) return;
       if (status === 429 && transport.paused("replay")) settings.onQuota?.();
       end(status === 0 ? "chunk lost" : `server answered ${status}`);
     });
@@ -198,9 +227,11 @@ export function createReplay(client: Client, settings: ReplaySettings) {
   return {
     async start() {
       if (stopRecord || ended) return;
-      const sampled = Math.random() < settings.sampleRate;
+      if (resumed?.done) return devWarn("replay skipped: this tab's recording has ended");
+      // a continued recording keeps its kind: a sampled visit streams on, an error buffer buffers on
+      const sampled = resumed ? resumed.sampled : Math.random() < settings.sampleRate;
       // the rolling buffer costs a full DOM snapshot and every mutation for the whole visit — sample it too
-      const buffering = !sampled && settings.onError && Math.random() < settings.onErrorSampleRate;
+      const buffering = !sampled && (resumed !== null || (settings.onError && Math.random() < settings.onErrorSampleRate));
       if (!sampled && !buffering) return;
       if (settings.skipWeakDevices && weakDevice()) return devWarn("replay skipped: weak device or constrained network");
       // without gzip the first chunk (the full snapshot) exceeds the server limit — don't download rrweb for nothing
@@ -234,8 +265,8 @@ export function createReplay(client: Client, settings: ReplaySettings) {
       if (sampled) {
         sampledSession = true;
         pendingSample = true;
-        // thresholds of 0 — upload right away, as before
-        if (qualifies(Date.now()) || (settings.minClicks <= 0 && settings.minDurationMs <= 0)) {
+        // a continued visit already passed the thresholds; with thresholds of 0 — upload right away too
+        if (resumed || qualifies(Date.now()) || (settings.minClicks <= 0 && settings.minDurationMs <= 0)) {
           pendingSample = false;
           startStreaming("sample");
         }
@@ -252,7 +283,8 @@ export function createReplay(client: Client, settings: ReplaySettings) {
       }
     },
     flush,
-    stop: () => end("stopped"),
+    // consent withdrawn or the client stopped: not the server's end — a later page may go on
+    stop: () => end("stopped", false),
     recording: () => !!stopRecord && !ended,
     streaming: () => streaming,
   };

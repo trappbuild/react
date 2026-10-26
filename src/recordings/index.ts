@@ -13,9 +13,9 @@ export interface RecordingsOptions {
   onError?: boolean;
   /** Mask all page text with asterisks (inputs are always masked). Default: false. */
   maskText?: boolean;
-  /** Upload a sampled session only after this many clicks. Default: 4 (the dashboard setting wins). */
+  /** Upload a sampled session only after this many clicks. Default: 2 (the dashboard setting wins). */
   minClicks?: number;
-  /** …and only after this many seconds. Default: 10 (the dashboard setting wins). */
+  /** …and only after this many seconds. Default: 5 (the dashboard setting wins). */
   minDurationSec?: number;
   /**
    * Replace images with placeholders (except `img[data-trapp-keep]`). Default: false — images are
@@ -24,11 +24,11 @@ export interface RecordingsOptions {
   blockImages?: boolean;
   /**
    * Share of the sessions NOT picked by `sampleRate` that keep the rolling buffer for `onError`.
-   * Default: 0.2 — the buffer re-snapshots the page every 2 minutes and records every mutation, so
+   * Default: 0.5 — the buffer re-snapshots the page every 2 minutes and records every mutation, so
    * running it for everyone would cost every visitor CPU and memory for the rare error replay.
    */
   onErrorSampleRate?: number;
-  /** Skip rrweb on weak devices (≤ 2 GB memory, ≤ 2 cores, data saver, 2G/3G). Default: true. */
+  /** Skip rrweb on weak devices (≤ 2 GB memory, ≤ 2 cores, data saver, 2G). Default: true. */
   skipWeakDevices?: boolean;
   /** Collect clicks, scroll depth and form steps (the light layer). Default: true. */
   interactions?: boolean;
@@ -73,10 +73,10 @@ export function recordings(options: RecordingsOptions = {}): TrappModule {
           sampleRate: server.sampleRate ?? options.sampleRate ?? 0.1,
           onError: server.onError ?? options.onError ?? true,
           maskText: server.maskText ?? options.maskText ?? false,
-          minClicks: server.minClicks ?? options.minClicks ?? 4,
-          minDurationMs: (server.minDurationSec ?? options.minDurationSec ?? 10) * 1000,
+          minClicks: server.minClicks ?? options.minClicks ?? 2,
+          minDurationMs: (server.minDurationSec ?? options.minDurationSec ?? 5) * 1000,
           blockImages: options.blockImages ?? false,
-          onErrorSampleRate: options.onErrorSampleRate ?? 0.2,
+          onErrorSampleRate: options.onErrorSampleRate ?? 0.5,
           skipWeakDevices: options.skipWeakDevices ?? true,
           loadRrweb: options.loadRrweb ?? defaultLoader,
           onQuota: () => {

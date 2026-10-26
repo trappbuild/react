@@ -132,7 +132,8 @@ but uploads one only once it is worth watching — at least `minClicks` clicks a
 recording — and then from its very start; a visit that never gets there is never sent (nor kept past
 4 MB in memory); a sampled visit takes one full snapshot and no periodic re-snapshots; `onError` mode keeps the last 60–120 s in memory and sends them, plus 30 s
 more, when an error or rage click happens. Chunks every 5 s or 64 KB, gzip when `CompressionStream`
-exists; stops after 30 min / 10 MB or when the server refuses (`429`, `409`, `404`, `413`). Settings
+exists; stops after 30 min / 10 MB or when the server refuses (`429`, `409`, `404`, `413`). A reload or
+the next page of a multi-page site continues the same recording from a fresh snapshot. Settings
 from the dashboard (`status.recordings`) override the options. Inputs are always masked; password and
 card fields and `[data-trapp-block]` are never recorded; `[data-trapp-mask]` masks text; `maskText: true`
 masks all text. Images are recorded as their URLs and loaded by the player, so a replay looks like the
@@ -149,11 +150,11 @@ recordings({ sampleRate: 0.1, loadRrweb: () => import("rrweb") })
 | `sampleRate` | `0.1` | Sessions recorded from the start |
 | `onError` | `true` | Buffer and send around errors / rage clicks |
 | `maskText` | `false` | Mask all page text |
-| `minClicks` | `4` | Clicks before a sampled session is uploaded |
-| `minDurationSec` | `10` | Seconds before a sampled session is uploaded |
+| `minClicks` | `2` | Clicks before a sampled session is uploaded |
+| `minDurationSec` | `5` | Seconds before a sampled session is uploaded |
 | `blockImages` | `false` | Replace images with placeholders |
-| `onErrorSampleRate` | `0.2` | Share of the other sessions that keep the "before the error" buffer (re-snapshot every 2 min) |
-| `skipWeakDevices` | `true` | No rrweb on ≤ 2 GB memory, ≤ 2 cores, data saver or 2G/3G, nor without `CompressionStream` |
+| `onErrorSampleRate` | `0.5` | Share of the other sessions that keep the "before the error" buffer (re-snapshot every 2 min) |
+| `skipWeakDevices` | `true` | No rrweb on ≤ 2 GB memory, ≤ 2 cores, data saver or 2G, nor without `CompressionStream` |
 | `interactions` | `true` | The light layer |
 | `loadRrweb` | bare `import("rrweb")` | How to load rrweb |
 

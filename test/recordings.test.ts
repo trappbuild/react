@@ -256,7 +256,7 @@ describe("replay (rrweb)", () => {
     const rr = fakeRrweb();
     vi.spyOn(Math, "random").mockReturnValue(0);
     const client = makeClient([recordings({ loadRrweb: rr.loader, interactions: false, onError: false })], { consent: true });
-    client.setStatus(enabled);
+    client.setStatus({ ...enabled, recordings: { minClicks: 4, minDurationSec: 10 } });
     stop = client.start();
     await flushPromises();
     const at = (ts: number, event: Partial<RrwebEvent>) => rr.record.mock.calls[0][0].emit({ timestamp: ts, ...event } as RrwebEvent);
@@ -352,13 +352,13 @@ describe("replay on weak devices and old browsers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("does not load rrweb on ≤ 2 GB devices, data saver or 3G — unless skipWeakDevices is off", async () => {
+  it("does not load rrweb on ≤ 2 GB devices, data saver or 2G — unless skipWeakDevices is off", async () => {
     mockFetch();
     vi.spyOn(Math, "random").mockReturnValue(0);
     for (const setup of [
       () => Object.defineProperty(nav, "deviceMemory", { value: 2, configurable: true }),
       () => Object.defineProperty(nav, "connection", { value: { saveData: true }, configurable: true }),
-      () => Object.defineProperty(nav, "connection", { value: { effectiveType: "3g" }, configurable: true }),
+      () => Object.defineProperty(nav, "connection", { value: { effectiveType: "2g" }, configurable: true }),
     ]) {
       setup();
       expect(weakDevice()).toBe(true);
@@ -372,6 +372,10 @@ describe("replay on weak devices and old browsers", () => {
       delete (nav as { deviceMemory?: number }).deviceMemory;
       delete (nav as { connection?: unknown }).connection;
     }
+    // 3G — обычный мобильный интернет в Chrome, не повод не записывать
+    Object.defineProperty(nav, "connection", { value: { effectiveType: "3g" }, configurable: true });
+    expect(weakDevice()).toBe(false);
+    delete (nav as { connection?: unknown }).connection;
     // выключенная проверка — rrweb грузится и на слабом устройстве
     Object.defineProperty(nav, "deviceMemory", { value: 1, configurable: true });
     const rr = fakeRrweb();
@@ -397,8 +401,8 @@ describe("replay on weak devices and old browsers", () => {
   it("keeps the onError buffer only for onErrorSampleRate of the not-sampled sessions", async () => {
     mockFetch();
     const rr = fakeRrweb();
-    // 0.5: не попала ни в sampleRate (0.1), ни в onErrorSampleRate (0.2 по умолчанию)
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    // 0.6: не попала ни в sampleRate (0.1), ни в onErrorSampleRate (0.5 по умолчанию)
+    vi.spyOn(Math, "random").mockReturnValue(0.6);
     const client = makeClient([recordings({ loadRrweb: rr.loader, interactions: false })], { consent: true });
     client.setStatus(enabled);
     stop = client.start();
@@ -440,5 +444,72 @@ describe("replay on weak devices and old browsers", () => {
     vi.advanceTimersByTime(5000);
     await flushPromises();
     expect(calls("replay")).toHaveLength(2); // still streaming after the 30 s window
+  });
+});
+
+describe("replay across reloads", () => {
+  /** A page of the same tab: the session id stays in sessionStorage, the module starts from scratch. */
+  async function page(rr: ReturnType<typeof fakeRrweb>, status: StatusSnapshot = enabled) {
+    const client = makeClient([recordings({ loadRrweb: rr.loader, interactions: false, minClicks: 0, minDurationSec: 0 })], { consent: true });
+    client.setStatus(status);
+    const stopIt = client.start();
+    await flushPromises();
+    return { client, stopIt };
+  }
+
+  it("continues the recording of the tab after a reload instead of starting over from seq 0", async () => {
+    useFakeTimers();
+    const { calls } = mockFetch();
+    mockBeacon();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    // first page: two chunks, seq 0 and 1
+    const rrA = fakeRrweb();
+    const a = await page(rrA);
+    rrA.push(true);
+    vi.advanceTimersByTime(5000);
+    await flushPromises();
+    rrA.push();
+    vi.advanceTimersByTime(5000);
+    await flushPromises();
+    expect(calls("replay").map((c) => c.url.searchParams.get("seq"))).toEqual(["0", "1"]);
+    // the tab reloads: the last chunk leaves as a beacon, which must not end the recording
+    rrA.push();
+    window.dispatchEvent(new Event("pagehide"));
+    await flushPromises();
+    a.stopIt();
+
+    // even a visit that would not be sampled now goes on — it is the same recording
+    vi.mocked(Math.random).mockReturnValue(0.99);
+    const rrB = fakeRrweb();
+    const b = await page(rrB);
+    expect(b.client.sessionId).toBe(a.client.sessionId);
+    expect(rrB.loader).toHaveBeenCalledTimes(1);
+    rrB.push(true);
+    vi.advanceTimersByTime(5000);
+    await flushPromises();
+    const next = calls("replay").at(-1)!;
+    expect(next.url.searchParams.get("seq")).toBe("3");
+    expect(next.url.searchParams.has("trigger")).toBe(false);
+    expect((next.json() as { events: RrwebEvent[] }).events[0].type).toBe(2); // a fresh full snapshot
+    b.stopIt();
+  });
+
+  it("does not start again in a tab whose recording the server ended", async () => {
+    useFakeTimers();
+    const { calls } = mockFetch(() => new Response(null, { status: 409 }));
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const rrA = fakeRrweb();
+    const a = await page(rrA);
+    rrA.push(true);
+    vi.advanceTimersByTime(5000);
+    await flushPromises();
+    expect(rrA.stopFn).toHaveBeenCalled();
+    a.stopIt();
+
+    const rrB = fakeRrweb();
+    const b = await page(rrB);
+    expect(rrB.loader).not.toHaveBeenCalled();
+    expect(calls("replay")).toHaveLength(1);
+    b.stopIt();
   });
 });
