@@ -5,7 +5,7 @@ export { useTrapp } from "./react/context.js";
 export { init, createClient, getClient, captureException, captureMessage, addBreadcrumb, setUser, setTag } from "./core/init.js";
 export { errors, type ErrorsOptions, type ErrorEvent, type Frame } from "./errors/index.js";
 export { maintenance, allowedMaintenanceUrl, MAINTENANCE_ORIGIN, type MaintenanceOptions } from "./maintenance/index.js";
-export { metrika, type MetrikaOptions } from "./metrika/index.js";
+export { metrika, track, type MetrikaOptions } from "./metrika/index.js";
 export { recordings, type RecordingsOptions, type Interaction, type RrwebModule } from "./recordings/index.js";
 export type { ConsentInput, ConsentLike } from "./core/consent.js";
 export type { Breadcrumb, CaptureContext, Client, ClientOptions, Level, TrappModule } from "./core/types.js";

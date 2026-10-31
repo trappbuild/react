@@ -4,17 +4,33 @@ import type { Client, TrappModule } from "../core/types.js";
 
 /** `POST /api/<project>/hit` body (back/src/model.rs `HitIn`); one hit per request. */
 interface Hit {
-  type: "pageview" | "leave";
+  type: "pageview" | "leave" | "event";
   path: string;
   url: string;
   referrer?: string;
   utm?: Record<string, string>;
   durationMs?: number;
+  /** `event` only: the name a goal in the dashboard matches. */
+  name?: string;
 }
 
 const UTM_KEYS = ["source", "medium", "campaign", "term", "content"];
 const BACKGROUND_LEAVE_MS = 30_000;
 const PATH_MAX = 300;
+const EVENT_NAME_MAX = 100;
+
+/** Sender of the running metrika module; `track` before setup or after teardown does nothing. */
+let tracker: ((name: string) => void) | undefined;
+
+/**
+ * A goal event — `track("signup")` after a sign-up, `track("purchase")` after a payment. A goal of type
+ * "event" with the same name in the dashboard (Metrics → Goals) counts the visitors who reached it and the
+ * conversion by channel, source, campaign and entry page. Only the name and the current path are sent —
+ * no properties, so no personal data can slip in. Follows the same consent rule as page views.
+ */
+export function track(name: string): void {
+  safe(() => tracker?.(name));
+}
 
 function utmFrom(search: string): Record<string, string> | undefined {
   const params = new URLSearchParams(search);
@@ -73,6 +89,12 @@ export function metrika(options: MetrikaOptions = {}): TrappModule {
         post(hit);
       };
 
+      tracker = (name) => {
+        const event = String(name).trim().slice(0, EVENT_NAME_MAX);
+        if (!event || !allowed()) return;
+        post({ type: "event", path: path.slice(0, PATH_MAX), url: location.origin + path, name: event });
+      };
+
       const leave = (beacon: boolean) => {
         if (!viewed) return;
         viewed = false;
@@ -101,6 +123,7 @@ export function metrika(options: MetrikaOptions = {}): TrappModule {
         () => window.removeEventListener("pagehide", onHide),
         () => document.removeEventListener("visibilitychange", onVisibility),
         () => clearTimeout(hideTimer),
+        () => (tracker = undefined),
       );
 
       view(document.referrer);

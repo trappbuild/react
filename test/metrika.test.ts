@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { metrika } from "../src/metrika";
+import { metrika, track } from "../src/metrika";
 import { flushPromises, makeClient, mockBeacon, mockFetch, removeBeacon, useFakeTimers } from "./helpers";
 
 let stop: () => void = () => {};
@@ -19,6 +19,29 @@ afterEach(() => {
 const hits = (calls: (p: string) => { json: () => unknown }[]) => calls("hit").map((c) => c.json() as Record<string, unknown>);
 
 describe("metrika", () => {
+  it("track sends a goal event with the name and current path only, and nothing before consent or setup", async () => {
+    track("too-early");
+    const { calls } = mockFetch();
+    const client = makeClient([metrika()], { consent: false });
+    stop = client.start();
+    await flushPromises();
+    track("signup");
+    await flushPromises();
+    expect(calls("hit")).toHaveLength(0);
+    client.setConsent({ statistics: true });
+    await flushPromises();
+    track("  purchase  ");
+    track("   ");
+    await flushPromises();
+    const events = hits(calls).filter((h) => h.type === "event");
+    expect(events).toEqual([{ type: "event", path: "/", url: `${location.origin}/`, name: "purchase" }]);
+    stop();
+    stop = () => {};
+    track("after-stop");
+    await flushPromises();
+    expect(hits(calls).filter((h) => h.type === "event")).toHaveLength(1);
+  });
+
   it("sends nothing before consent, then a pageview of the current page", async () => {
     const { calls } = mockFetch();
     const client = makeClient([metrika()], { consent: false });

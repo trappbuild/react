@@ -118,6 +118,22 @@ consent; afterwards the current page is sent.
 nothing on the device and the server keeps only a hash of IP + User-Agent with a salt that is deleted
 the next day, so a site may rely on legitimate interest here — say so in your privacy policy.
 
+The visit's channel (direct, search, social, AI assistants, email, paid, referral) and UTM tags
+(`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`) come from its first page.
+
+### `track(name)`
+
+A goal event: `track("signup")` after a sign-up, `track("purchase")` after a payment. Add a goal of type
+"event" with the same name in the dashboard (Metrics → Goals) to see how many visitors reached it and the
+conversion by channel, source, campaign and entry page. Only the name (≤ 100 chars) and the current path
+are sent — no properties. Page goals (`/thanks`, `/blog/*`) need no code at all.
+
+```tsx
+import { track } from "@trappbuild/react";
+
+<button onClick={() => { submit(); track("signup"); }}>Sign up</button>
+```
+
 ### `recordings(options?)`
 
 Two layers. **Interactions** (in the main bundle, ~2 KB): clicks with a structural selector (≤ 5
